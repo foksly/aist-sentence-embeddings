@@ -99,7 +99,7 @@ def ELMoParaphraseEmbedder(elmo,
                 dataframe=None,
                 batch_size=64,
                 tokenizer=None,
-                mean=False,
+                pooling=None,
                 **kwargs):
     try:
         num_samples = len(dataframe)
@@ -141,10 +141,15 @@ def ELMoParaphraseEmbedder(elmo,
         text_1_elmo_batch = elmo(text_1)
         text_2_elmo_batch = elmo(text_2)
         for j in range(len(text_1_elmo_batch)):
-            if mean:
+            if pooling == 'mean':
                 sample = {
                     'text_1': np.mean(text_1_elmo_batch[j], axis=0),
                     'text_2': np.mean(text_2_elmo_batch[j], axis=0)
+                }
+            elif pooling == 'max':
+                sample = {
+                    'text_1': np.max(text_1_elmo_batch[j], axis=0),
+                    'text_2': np.max(text_2_elmo_batch[j], axis=0)
                 }
             else:
                 sample = {'text_1': text_1_elmo_batch[j], 'text_2': text_2_elmo_batch[j]}
