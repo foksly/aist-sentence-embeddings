@@ -17,7 +17,7 @@ def ELMoMultipleChoiceEmbedder(elmo,
                 dataframe=None,
                 batch_size=64,
                 tokenizer=None,
-                mean=False,
+                pooling=None,
                 **kwargs):
     try:
         num_samples = len(dataframe)
@@ -72,12 +72,19 @@ def ELMoMultipleChoiceEmbedder(elmo,
         questions_elmo_batch = elmo(questions)
         choices_elmo_batch = {choice: elmo(answer_choices[choice]) for choice in answer_choices}
         for j in range(len(questions_elmo_batch)):
-            if mean:
+            if pooling == 'mean':
                 sample = {
                     'question': np.mean(questions_elmo_batch[j], axis=0)
                 }
                 for choice in choices_elmo_batch:
                     sample[choice] = np.mean(
+                        choices_elmo_batch[choice][j], axis=0)
+            elif pooling == 'max':
+                sample = {
+                    'question': np.max(questions_elmo_batch[j], axis=0)
+                }
+                for choice in choices_elmo_batch:
+                    sample[choice] = np.max(
                         choices_elmo_batch[choice][j], axis=0)
             else:
                 sample = {'question': questions_elmo_batch[j]}
