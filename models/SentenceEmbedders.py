@@ -6,19 +6,19 @@ import pandas as pd
 
 import pickle
 from tqdm import tqdm
-
 """
 class ELMo():
     def __init__(self, elmo):
         self.elmo = elmo
 """
 
+
 def ELMoMultipleChoiceEmbedder(elmo,
-                dataframe=None,
-                batch_size=64,
-                tokenizer=None,
-                pooling=None,
-                **kwargs):
+                               dataframe=None,
+                               batch_size=64,
+                               tokenizer=None,
+                               pooling=None,
+                               **kwargs):
     try:
         num_samples = len(dataframe)
     except Exception:
@@ -47,11 +47,11 @@ def ELMoMultipleChoiceEmbedder(elmo,
         answer_choices_data = {}
         for i in range(len(num_choices)):
             if isinstance(kwargs['answer_choices'], dict):
-                answer_choices_data[f'choice_{i}'] = kwargs[
-                    'answer_choices'][f'choice_{i}']
+                answer_choices_data[f'choice_{i}'] = kwargs['answer_choices'][
+                    f'choice_{i}']
             elif isinstance(kwargs['answer_choices'], list):
-                answer_choices_data[f'choice_{i}'] = kwargs[
-                    'answer_choices'][i]
+                answer_choices_data[f'choice_{i}'] = kwargs['answer_choices'][
+                    i]
         correct_answers_data = kwargs['correct_answers']
 
     embeddings = []
@@ -70,22 +70,34 @@ def ELMoMultipleChoiceEmbedder(elmo,
             correct_answers.append(correct_answers_data[i])
 
         questions_elmo_batch = elmo(questions)
-        choices_elmo_batch = {choice: elmo(answer_choices[choice]) for choice in answer_choices}
+        choices_elmo_batch = {
+            choice: elmo(answer_choices[choice])
+            for choice in answer_choices
+        }
         for j in range(len(questions_elmo_batch)):
             if pooling == 'mean':
-                sample = {
-                    'question': np.mean(questions_elmo_batch[j], axis=0)
-                }
+                sample = {'question': np.mean(questions_elmo_batch[j], axis=0)}
                 for choice in choices_elmo_batch:
                     sample[choice] = np.mean(
                         choices_elmo_batch[choice][j], axis=0)
             elif pooling == 'max':
-                sample = {
-                    'question': np.max(questions_elmo_batch[j], axis=0)
-                }
+                sample = {'question': np.max(questions_elmo_batch[j], axis=0)}
                 for choice in choices_elmo_batch:
                     sample[choice] = np.max(
                         choices_elmo_batch[choice][j], axis=0)
+            elif pooling == 'mean_max':
+                sample = {
+                    'question':
+                    np.concatenate([
+                        np.mean(questions_elmo_batch[j], axis=0),
+                        np.max(questions_elmo_batch[j], axis=0)
+                    ])
+                }
+                for choice in choices_elmo_batch:
+                    sample[choice] = np.concatenate([
+                        np.mean(choices_elmo_batch[choice][j], axis=0),
+                        np.max(choices_elmo_batch[choice][j], axis=0)
+                    ])
             else:
                 sample = {'question': questions_elmo_batch[j]}
                 for choice in choices_elmo_batch:
@@ -95,16 +107,13 @@ def ELMoMultipleChoiceEmbedder(elmo,
             embeddings.append(sample)
     return embeddings
 
+
 def ELMoParaphraseEmbedder(elmo,
-                dataframe=None,
-                batch_size=64,
-                tokenizer=None,
-<<<<<<< HEAD
-                mean=False,
-=======
-                pooling=None,
->>>>>>> 6d357f2b89a28566a7eb279d2b57aa98f48917d6
-                **kwargs):
+                           dataframe=None,
+                           batch_size=64,
+                           tokenizer=None,
+                           pooling=None,
+                           **kwargs):
     try:
         num_samples = len(dataframe)
     except Exception:
@@ -138,37 +147,41 @@ def ELMoParaphraseEmbedder(elmo,
 
         for i in range(batch, batch + batch_size):
             ids.append(i)
-<<<<<<< HEAD
-            text_1.append(tokenizer.tokenize(text_1[i]))
-            text_2.append(tokenizer.tokenize(text_2[i]))
-=======
             text_1.append(tokenizer.tokenize(text_1_data[i]))
             text_2.append(tokenizer.tokenize(text_2_data[i]))
->>>>>>> 6d357f2b89a28566a7eb279d2b57aa98f48917d6
             correct_answers.append(correct_answers_data[i])
 
         text_1_elmo_batch = elmo(text_1)
         text_2_elmo_batch = elmo(text_2)
         for j in range(len(text_1_elmo_batch)):
-<<<<<<< HEAD
-            if mean:
-=======
             if pooling == 'mean':
->>>>>>> 6d357f2b89a28566a7eb279d2b57aa98f48917d6
                 sample = {
                     'text_1': np.mean(text_1_elmo_batch[j], axis=0),
                     'text_2': np.mean(text_2_elmo_batch[j], axis=0)
                 }
-<<<<<<< HEAD
-=======
             elif pooling == 'max':
                 sample = {
                     'text_1': np.max(text_1_elmo_batch[j], axis=0),
                     'text_2': np.max(text_2_elmo_batch[j], axis=0)
                 }
->>>>>>> 6d357f2b89a28566a7eb279d2b57aa98f48917d6
+            elif pooling == 'mean_max':
+                sample = {
+                    'text_1':
+                    np.concatenate([
+                        np.mean(text_1_elmo_batch[j], axis=0),
+                        np.max(text_1_elmo_batch[j], axis=0)
+                    ]),
+                    'text_2':
+                    np.concatenate([
+                        np.mean(text_2_elmo_batch[j], axis=0),
+                        np.max(text_2_elmo_batch[j], axis=0)
+                    ])
+                }
             else:
-                sample = {'text_1': text_1_elmo_batch[j], 'text_2': text_2_elmo_batch[j]}
+                sample = {
+                    'text_1': text_1_elmo_batch[j],
+                    'text_2': text_2_elmo_batch[j]
+                }
             sample['id'] = ids[j]
             sample['correct_answer'] = correct_answers[j]
             embeddings.append(sample)
@@ -202,19 +215,18 @@ def BertMultipleChoiceEmbedder(bert_encoder,
 
         answer_choices = {}
         for i in range(len(answer_choices_cols)):
-            answer_choices[f'choice_{i}'] = dataframe[
-                answer_choices_cols[i]]
+            answer_choices[f'choice_{i}'] = dataframe[answer_choices_cols[i]]
     else:
         question_data = kwargs['questions']
         num_choices = len(kwargs['answer_choices'])
         answer_choices_data = {}
         for i in range(len(num_choices)):
             if isinstance(kwargs['answer_choices'], dict):
-                answer_choices_data[f'choice_{i}'] = kwargs[
-                    'answer_choices'][f'choice_{i}']
+                answer_choices_data[f'choice_{i}'] = kwargs['answer_choices'][
+                    f'choice_{i}']
             elif isinstance(kwargs['answer_choices'], list):
-                answer_choices_data[f'choice_{i}'] = kwargs[
-                    'answer_choices'][i]
+                answer_choices_data[f'choice_{i}'] = kwargs['answer_choices'][
+                    i]
         correct_answers_data = kwargs['correct_answers']
 
     embeddings = []
@@ -232,7 +244,10 @@ def BertMultipleChoiceEmbedder(bert_encoder,
             correct_answers.append(correct_answers_data[i])
 
         questions_bert_batch = bert_encoder(questions)
-        choices_bert_batch = {choice: bert_encoder(answer_choices[choice]) for choice in answer_choices}
+        choices_bert_batch = {
+            choice: bert_encoder(answer_choices[choice])
+            for choice in answer_choices
+        }
         for j in range(len(questions_bert_batch)):
             sample = {'question': questions_bert_batch[j]}
             for choice in choices_bert_batch:
@@ -241,6 +256,7 @@ def BertMultipleChoiceEmbedder(bert_encoder,
             sample['correct_answer'] = correct_answers[j]
             embeddings.append(sample)
     return embeddings
+
 
 def BertParaphraseEmbedder(bert_encoder,
                            dataframe=None,
@@ -281,13 +297,8 @@ def BertParaphraseEmbedder(bert_encoder,
 
         for i in range(batch, batch + batch_size):
             ids.append(i)
-<<<<<<< HEAD
-            text_1.append(text_1[i])
-            text_2.append(text_2[i])
-=======
             text_1.append(text_1_data[i])
             text_2.append(text_2_data[i])
->>>>>>> 6d357f2b89a28566a7eb279d2b57aa98f48917d6
             correct_answers.append(correct_answers_data[i])
 
         text_1_elmo_batch = bert_encoder(text_1)
@@ -299,13 +310,13 @@ def BertParaphraseEmbedder(bert_encoder,
                     'text_2': np.mean(text_2_elmo_batch[j], axis=0)
                 }
             else:
-                sample = {'text_1': text_1_elmo_batch[j], 'text_2': text_2_elmo_batch[j]}
+                sample = {
+                    'text_1': text_1_elmo_batch[j],
+                    'text_2': text_2_elmo_batch[j]
+                }
             sample['id'] = ids[j]
             sample['correct_answer'] = correct_answers[j]
             embeddings.append(sample)
-<<<<<<< HEAD
-    return embeddings
-=======
     return embeddings
 
 
@@ -313,12 +324,17 @@ def max_pool(arr):
     arr = arr.reshape(-1, 768)
     return np.max(arr, axis=0)
 
+
 def avg_pool(arr):
     arr = arr.reshape(-1, 768)
     return np.mean(arr, axis=0)
 
-def bert_layer(embs, layer_num=12, strategy='concat', problem_type='multiple-choice'):
-    
+
+def bert_layer(embs,
+               layer_num=12,
+               strategy='concat',
+               problem_type='multiple-choice'):
+
     embs_layer = []
     for emb in embs:
         if strategy == 'concat':
@@ -329,19 +345,30 @@ def bert_layer(embs, layer_num=12, strategy='concat', problem_type='multiple-cho
             pooling = avg_pool
         elif strategy == 'mean_max':
             pooling = lambda x: np.concatenate([avg_pool(x), max_pool(x)])
-        
+
         if isinstance(layer_num, int):
             layer_num = (layer_num, layer_num)
             pooling = lambda x: x
         if problem_type == 'multiple-choice':
-            sample = {'question': pooling(emb['question'][768*(layer_num[0] - 1):768 * (layer_num[1])])}
+            sample = {
+                'question':
+                pooling(emb['question'][768 * (layer_num[0] - 1):768 *
+                                        (layer_num[1])])
+            }
             for i in range(4):
-                sample[f'choice_{i}'] = pooling(emb[f'choice_{i}'][768*(layer_num[0] - 1):768 * (layer_num[1])])
+                sample[f'choice_{i}'] = pooling(
+                    emb[f'choice_{i}'][768 * (layer_num[0] - 1):768 *
+                                       (layer_num[1])])
         elif problem_type == 'paraphrase':
-            sample = {'text_1': pooling(emb['text_1'][768*(layer_num[0] - 1):768 * (layer_num[1])]),
-                      'text_2': pooling(emb['text_2'][768*(layer_num[0] - 1):768 * (layer_num[1])])}
+            sample = {
+                'text_1':
+                pooling(emb['text_1'][768 * (layer_num[0] - 1):768 *
+                                      (layer_num[1])]),
+                'text_2':
+                pooling(emb['text_2'][768 * (layer_num[0] - 1):768 *
+                                      (layer_num[1])])
+            }
         sample['id'] = emb['id']
         sample['correct_answer'] = emb['correct_answer']
         embs_layer.append(sample)
     return embs_layer
->>>>>>> 6d357f2b89a28566a7eb279d2b57aa98f48917d6
